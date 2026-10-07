@@ -744,10 +744,10 @@ const UI = (() => {
       ${secH('🍎 Mac')}<div class="card small" style="margin-bottom:10px">1. 칩에 맞는 파일을 받아요 (M1·M2·M3… → Apple 칩, 그 전 Mac → Intel)<br>
         2. dmg를 열고 <b>SoccerStar</b>를 응용 프로그램 폴더로 끌어 놓아요<br>
         3. 처음 열 때 "확인되지 않은 개발자" 경고가 뜨면 <b>시스템 설정 → 개인정보 보호 및 보안</b> 맨 아래 <b>그래도 열기</b><br>
-        4. 메뉴 막대의 ⚽ 아이콘으로 숨기기·캠프 열기·종료</div>
+        4. 메뉴 막대의 ⚽ 아이콘으로 숨기기·모니터 선택·종료</div>
       ${secH('🪟 Windows')}<div class="card small" style="margin-bottom:10px">1. exe를 받아 실행해요<br>
         2. "Windows의 PC 보호" 창이 뜨면 <b>추가 정보 → 실행</b><br>
-        3. 작업 표시줄 오른쪽 알림 영역의 ⚽ 아이콘으로 숨기기·캠프 열기·종료</div>
+        3. 작업 표시줄 오른쪽 알림 영역의 ⚽ 아이콘으로 숨기기·모니터 선택·종료</div>
       <p class="small faint">앱은 게임 화면을 이 서버에서 불러와서, 게임이 업데이트되면 앱도 자동으로 최신이 돼요.</p>
       <button class="btn go" data-act="closeHowto">닫기</button>`);
   }

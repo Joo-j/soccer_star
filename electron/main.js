@@ -113,7 +113,6 @@ function buildMenu() {
   }));
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: '보이기 / 숨기기', click: () => (win.isVisible() ? win.hide() : win.show()) },
-    { label: '캠프 열기', click: () => { win.show(); win.webContents.executeJavaScript('UI.openCamp()'); } },
     { label: '새로고침', click: () => loadGame() },
     { label: '표시할 모니터', submenu: displays },
     { type: 'separator' },
