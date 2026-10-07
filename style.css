@@ -244,11 +244,15 @@ body.desktop #overlay { background: transparent; }
 .hero .ball { font-size: 54px; filter: drop-shadow(0 6px 18px rgba(62, 240, 138, .35)); }
 .hero .en { font: 700 44px/0.95 var(--num); letter-spacing: .04em; }
 .hero .ko { color: var(--accent); font-weight: 800; font-size: 15px; letter-spacing: .08em; }
-.hero .tagline { color: var(--dim); margin: 14px 0 26px; }
 .namebox { display: flex; gap: 8px; max-width: 420px; margin: 0 auto; }
 .namebox input { font-size: 16px !important; padding: 12px 14px !important; text-align: center; }
 .namebox .btn.go { padding: 0 26px; }
 .hero .err { margin: 8px 0 2px; }
+.hero .logo { margin-bottom: 26px; }
+.linkbtn { background: none; border: 0; color: var(--dim); font-size: 12px; margin-top: 16px; text-decoration: underline; text-underline-offset: 3px; }
+.linkbtn:hover { color: var(--accent); }
+.findbox { margin-top: 10px; }
+button.chip { cursor: pointer; }
 .create { display: grid; grid-template-columns: 1.15fr 1fr; }
 .create .pick { padding: 26px 26px 24px; }
 .create .preview { padding: 26px; background: rgba(0, 0, 0, .18); border-left: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; }

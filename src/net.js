@@ -36,17 +36,27 @@ const Net = (() => {
     } finally { clearTimeout(timer); }
   }
 
-  // ── 이 기기의 계정 { active, list: { 이름: { token } } }
+  // ── 이 기기의 계정 { active, list: { 이름: { token, recovery } } }
   function accounts() { try { return JSON.parse(Store.get(ACC_KEY)) || { active: null, list: {} }; } catch { return { active: null, list: {} }; } }
   function setAccounts(a) { Store.set(ACC_KEY, JSON.stringify(a)); }
   function activeToken() { const a = accounts(); return a.active && a.list[a.active] ? a.list[a.active].token : null; }
   function activeName() { return accounts().active; }
-  function remember(name, token) { const a = accounts(); a.list[name] = { token }; a.active = name; setAccounts(a); }
+  function remember(name, token, recovery) { const a = accounts(); a.list[name] = { token, recovery }; a.active = name; setAccounts(a); }
+  const myCode = () => { const a = accounts(); return a.active && a.list[a.active] ? a.list[a.active].recovery || null : null; };
   function forget(name) { const a = accounts(); delete a.list[name]; if (a.active === name) a.active = null; setAccounts(a); }
 
   const checkName = (name) => api('GET', `/api/nickname?name=${encodeURIComponent(name)}`, null, { auth: false });
-  async function createAccount(name) { const r = await api('POST', '/api/accounts', { name }, { auth: false, timeout: 60000 }); remember(r.name, r.token); return r; }
-  const loadRemote = () => api('GET', '/api/me', null, { timeout: 60000 });
+  async function createAccount(name) { const r = await api('POST', '/api/accounts', { name }, { auth: false, timeout: 60000 }); remember(r.name, r.token, r.recovery); return r; }
+  async function recover(name, code) { const r = await api('POST', '/api/recover', { name, code }, { auth: false, timeout: 60000 }); remember(r.name, r.token, r.recovery); return r; }
+  // 이름이 비어 있으면(서버 초기화) 같은 이름으로 다시 만든다. 다른 사람이 먼저 가져갔으면 false
+  async function reRegister(name) {
+    try { await createAccount(name); return true; } catch { return false; } // 성공해야 계정 정보가 바뀐다 (닫히는 중에 실패해도 그대로)
+  }
+  async function loadRemote() {
+    const r = await api('GET', '/api/me', null, { timeout: 60000 });
+    if (r.recovery && r.recovery !== myCode()) remember(r.name, activeToken(), r.recovery);
+    return r;
+  }
 
   function duelStats(s) {
     const st = effStats(s);
@@ -78,6 +88,10 @@ const Net = (() => {
       lastSent = str;
       setStatus('online');
     } catch (e) {
+      // 서버가 초기화돼 계정이 사라졌으면 같은 이름으로 다시 등록하고 이 기기의 세이브를 올린다
+      if (e.code === 'gone' && await reRegister(S.name)) {
+        try { await api('PUT', '/api/me', body); lastSent = str; setStatus('online'); return; } catch {}
+      }
       setStatus(e.code === 'gone' ? 'gone' : 'offline');
     }
   }
@@ -94,7 +108,7 @@ const Net = (() => {
   return {
     SERVER, get status() { return status; }, onStatus: (f) => onStatus.push(f),
     accounts, activeName, activeToken, forget,
-    checkName, createAccount, loadRemote, sync, profile, duelStats,
+    checkName, createAccount, reRegister, recover, myCode, loadRemote, sync, profile, duelStats,
     refreshWorld, realsOn, get world() { return world; },
     ranking: (sort) => api('GET', `/api/ranking?sort=${sort}`, null, { auth: false }),
     duel: (target) => api('POST', '/api/duels', { target }),

@@ -174,7 +174,8 @@ const UI = (() => {
     setHtml($('camp-res'), `<span class="chip" title="돈">💰 <span class="num">${fmtMoney(S.money)}</span></span>
       <span class="chip" title="연습 노트">📓 <span class="num">${S.notes}</span></span>
       <span class="chip" title="스킬 포인트">✨ <span class="num">${S.sp}</span></span>
-      <span class="chip" title="팔로워">${fameTier().icon} <span class="num">${fmtNum(S.fame)}</span></span>`);
+      <span class="chip" title="팔로워">${fameTier().icon} <span class="num">${fmtNum(S.fame)}</span></span>
+      <button class="chip" data-act="myCode" title="내 선수 코드 (다른 기기에서 찾기)">🔑</button>`);
     const d = dots();
     setHtml($('nav'), TABS.map(([id, ic, name]) => `<button class="${tab === id ? 'on' : ''}" data-act="tab" data-arg="${id}"><span class="i">${ic}</span>${name}${dot(d[id])}</button>`).join('') + `<div class="ver">v${GAME_VERSION}</div>`);
     const body = $('camp-body');
@@ -548,10 +549,14 @@ const UI = (() => {
     createState = { name: '', pos: 'FW', foot: 'R', special: 'sho', nextGen: false, accountMade: false };
     showModal('start', `<div class="hero">
       <div class="logo"><span class="ball">⚽</span><div><div class="en">SOCCER STAR</div><div class="ko">축구선수 키우기</div></div></div>
-      <p class="tagline">고1 입학부터 드래프트 · 이적시장 · 발롱도르까지</p>
       <div class="namebox"><input id="in-name" maxlength="12" placeholder="선수 이름" autocomplete="off" spellcheck="false"><button class="btn go" data-act="startName">시작</button></div>
       <div class="err" id="name-err">${esc(err)}</div>
       <div class="faint small">한글·영문·숫자 2~12자 · 랭킹에 이 이름으로 올라가요</div>
+      <button class="linkbtn" data-act="showFind">🔑 코드로 내 선수 찾기</button>
+      <div class="findbox hidden" id="findbox">
+        <div class="namebox"><input id="in-rname" placeholder="선수 이름" autocomplete="off" spellcheck="false"><input id="in-rcode" placeholder="코드" autocomplete="off" spellcheck="false" style="max-width:130px"><button class="btn" data-act="recover">불러오기</button></div>
+        <div class="err" id="rec-err"></div>
+      </div>
     </div>`);
     setTimeout(() => $('in-name') && $('in-name').focus(), 50);
   }
@@ -565,10 +570,34 @@ const UI = (() => {
     try {
       const r = await Net.checkName(name);
       if (!r.ok) { errEl.textContent = r.reason; return; }
+      // 이 기기에 이 이름의 선수가 있으면(서버가 초기화된 경우) 다시 등록하고 그대로 이어서 한다
+      const local = loadLocal(name);
+      if (local) {
+        await Net.createAccount(name);
+        S = local;
+        closeModal();
+        enterGame();
+        banner('👋 다시 만나요', `${name} — 이 기기에 있던 기록으로 이어서 해요`);
+        return;
+      }
     } catch (e) { errEl.textContent = e.message; return; } finally { delete errEl.dataset.busy; }
     createState.name = name;
     showCreate();
   }
+  async function recoverAcc() {
+    const name = $('in-rname').value.trim(), code = $('in-rcode').value.trim();
+    const errEl = $('rec-err');
+    if (!name || !code) { errEl.textContent = '선수 이름과 코드를 넣어 주세요'; return; }
+    errEl.innerHTML = '<span class="faint">찾는 중…</span>';
+    try { await Net.recover(name, code); } catch (e) { errEl.textContent = e.message; return; }
+    location.reload();
+  }
+  function showMyCode() {
+    showModal('code', `<h2>🔑 내 선수 코드</h2><p class="lead">다른 기기나 데스크탑 앱 첫 화면의 <b>코드로 내 선수 찾기</b>에 선수 이름과 이 코드를 넣으면 이어서 할 수 있어요.</p>
+      <div class="card sel" style="text-align:center;padding:18px;margin-bottom:14px"><div class="faint small">${esc(S.name)}</div><div class="num" style="font-size:44px;letter-spacing:.12em;color:var(--accent)">${esc(Net.myCode() || '----')}</div></div>
+      <button class="btn go" data-act="closeModal">닫기</button>`);
+  }
+
   // ── 선수 만들기: 왼쪽에서 고르면 오른쪽 카드에 시작 능력치가 바로 보인다
   function showCreate() {
     const cs = createState;
@@ -806,6 +835,10 @@ const UI = (() => {
       case 'retireFree': if (confirm('정말 은퇴할까요? 다음 세대 선수로 새로 시작해요.')) { retire(); closeCamp(); showRetired(); saveLocal(); Net.sync(true); } break;
       // 시작 화면
       case 'startName': await startName(); break;
+      case 'showFind': $('findbox').classList.toggle('hidden'); if (!$('findbox').classList.contains('hidden')) $('in-rname').focus(); break;
+      case 'recover': await recoverAcc(); break;
+      case 'myCode': showMyCode(); break;
+      case 'closeModal': closeModal(); break;
       case 'cPos': createState.pos = arg; createState.special = Object.entries(POSITIONS[arg].w).sort((a, b) => b[1] - a[1])[0][0]; showCreate(); break;
       case 'cFoot': createState.foot = arg; showCreate(); break;
       case 'cSpecial': createState.special = arg; showCreate(); break;
@@ -904,6 +937,7 @@ const UI = (() => {
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.isComposing && e.target.id === 'in-name') startName();
+      if (e.key === 'Enter' && !e.isComposing && (e.target.id === 'in-rcode' || e.target.id === 'in-rname')) recoverAcc();
       if (e.key === 'Escape' && campOpen) closeCamp();
     });
     renderHud();
@@ -915,7 +949,7 @@ const UI = (() => {
       const r = await Net.loadRemote();
       if (r.save && (!save || (r.save.lastSeen || 0) > (save.lastSeen || 0))) save = migrate(r.save);
     } catch (e) {
-      if (e.code === 'gone') { Net.forget(name); showStart('서버에서 계정을 찾을 수 없어요. 새로 만들어 주세요.'); return; }
+      if (e.code === 'gone' && !(save && await Net.reRegister(name))) { Net.forget(name); showStart('서버에서 계정을 찾을 수 없어요. 새로 만들어 주세요.'); return; }
       if (!save) { showModal('loading', `<h2>서버에 연결할 수 없어요</h2><p class="err">${esc(e.message)}</p><button class="btn go" onclick="location.reload()">다시 시도</button>`); return; }
     }
     if (modal === 'loading') closeModal();
