@@ -465,6 +465,15 @@ function startNextGen(pos, foot, special) {
 }
 
 // ───────────────────────── 시간 흐름 ─────────────────────────
+// 자동 출전: 휴식으로 스태미나가 다 차면 알아서 다시 나간다 (꺼 둔 동안에도 같은 규칙).
+// 시즌 결산·무소속·은퇴 중에는 멈추고, 부상이면 회복한 뒤에 나간다. 끄려면 S.auto = false
+const autoOn = () => S.auto !== false;
+function autoStartAt() {
+  if (!autoOn() || S.mode !== 'home' || S.free || !S.season || S.season.done || S.pendingEnd || S.phase === 'retired') return null;
+  const from = Math.max(S.lastTick, S.homeAt || 0);
+  const fullAt = from + Math.max(0, stamMax() - S.stamina) / restRate() * 1000;
+  return Math.max(fullAt, S.injury ? S.injury.until : 0);
+}
 function tick(t = Date.now()) {
   if (!S || S.phase === 'retired') return;
   tickBuild(t);
@@ -472,26 +481,36 @@ function tick(t = Date.now()) {
   tickFree(t);
   if (S.injury && t >= S.injury.until) { hooks.toast(`💪 ${S.injury.name} 회복! 다시 뛸 수 있어요`); S.injury = null; }
   let guard = 0;
-  while (S.mode === 'run' && guard++ < 500) {
-    const r = S.run;
-    if (r.phase === 'travel') {
-      if (t < r.t0 + TRAVEL_SEC * 1000) break;
-      startMatch(r.t0 + TRAVEL_SEC * 1000);
-    } else if (r.phase === 'match') {
-      const end = r.match.t0 + MATCH_SEC * 1000;
-      if (t < end) break;
-      applyMatch(end);
-      r.match = null;
-      const cont = !r.stop && !injured(end) && S.stamina >= staminaCost() && !S.season.done;
-      r.phase = cont ? 'travel' : 'back';
-      r.t0 = end;
-    } else {
-      if (t < r.t0 + TRAVEL_SEC * 1000) break;
-      S.homeAt = r.t0 + TRAVEL_SEC * 1000;
-      S.mode = 'home';
-      S.run = null;
-      hooks.toast('🏠 집에 돌아왔어요');
+  while (guard++ < 2000) {
+    if (S.mode === 'run') {
+      const r = S.run;
+      if (r.phase === 'travel') {
+        if (t < r.t0 + TRAVEL_SEC * 1000) break;
+        startMatch(r.t0 + TRAVEL_SEC * 1000);
+      } else if (r.phase === 'match') {
+        const end = r.match.t0 + MATCH_SEC * 1000;
+        if (t < end) break;
+        applyMatch(end);
+        r.match = null;
+        const cont = !r.stop && !injured(end) && S.stamina >= staminaCost() && !S.season.done;
+        r.phase = cont ? 'travel' : 'back';
+        r.t0 = end;
+      } else {
+        if (t < r.t0 + TRAVEL_SEC * 1000) break;
+        S.homeAt = r.t0 + TRAVEL_SEC * 1000;
+        S.mode = 'home';
+        S.run = null;
+        hooks.toast('🏠 집에 돌아왔어요');
+      }
+      continue;
     }
+    const at = autoStartAt();
+    if (at == null || at > t) break;
+    S.stamina = stamMax();
+    S.lastTick = at;
+    if (S.injury && at >= S.injury.until) S.injury = null;
+    S.mode = 'run';
+    S.run = { phase: 'travel', t0: at, stop: false, played: 0, match: null, auto: true };
   }
   if (S.mode === 'home') {
     const from = Math.max(S.lastTick, S.homeAt || 0);

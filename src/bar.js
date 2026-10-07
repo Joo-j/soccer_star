@@ -85,11 +85,6 @@ const Bar = (() => {
   }
 
   // ───────────────────────── 배경 ─────────────────────────
-  function sky(top = '#7ec8f0', bottom = '#cfeaf7') {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, top); g.addColorStop(1, bottom);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  }
   function ground(y, col = '#5aa845', dark = '#4a9038') {
     ctx.fillStyle = col; ctx.fillRect(0, y, W, H - y);
     ctx.fillStyle = dark;
@@ -116,7 +111,6 @@ const Bar = (() => {
   function drawHome(t) {
     const night = new Date().getHours();
     const dark = night >= 19 || night < 6;
-    sky(dark ? '#1b2340' : '#8fd0f2', dark ? '#3a4466' : '#d8f0fa');
     const gy = H - 34;
     ground(gy);
     // 집 (레벨에 따라 커진다)
@@ -162,20 +156,14 @@ const Bar = (() => {
     }
     // 휴식 표시
     const max = stamMax();
-    if (S.phase !== 'retired' && !injured() && S.stamina < max) label(`💤 휴식 중 — 가득 차기까지 ${fmtSec((max - S.stamina) / restRate())}`, W / 2 + 120, 34, '#fff', 11);
+    const autoAt = autoStartAt();
+    if (S.phase !== 'retired' && !injured() && S.stamina < max) label(autoAt ? `💤 휴식 중 — ${fmtSec((autoAt - Date.now()) / 1000)} 뒤 자동 출전` : `💤 휴식 중 — 가득 차기까지 ${fmtSec((max - S.stamina) / restRate())}`, W / 2 + 120, 34, '#fff', 11);
     if (S.phase === 'retired') label('🎖️ 은퇴한 선수 — 캠프에서 다음 세대를 시작하세요', W / 2, 40, '#ffd24a', 12);
   }
 
   // ───────────────────────── 이동 ─────────────────────────
   function drawTravel(t, toStadium, k) {
-    sky('#8fd0f2', '#e0f2fa');
     const gy = H - 30;
-    // 멀리 있는 산·건물
-    for (let i = 0; i < 8; i++) {
-      const x = ((i * 180 - t * 0.03) % (W + 200) + W + 200) % (W + 200) - 100;
-      ctx.fillStyle = '#a8c8a0';
-      ctx.beginPath(); ctx.moveTo(x - 90, gy); ctx.lineTo(x, gy - 50 - hash(i) * 30); ctx.lineTo(x + 90, gy); ctx.fill();
-    }
     ctx.fillStyle = '#555'; ctx.fillRect(0, gy, W, 30);
     ctx.fillStyle = '#ddd';
     for (let x = -(t * 0.25 % 40); x < W; x += 40) ctx.fillRect(x, gy + 14, 20, 2);
@@ -375,7 +363,6 @@ const Bar = (() => {
 
   function drawCrowd(t, excite, myTeam, opp, home) {
     const cols = home ? [myTeam.c1, myTeam.c2, '#e8e0d0', myTeam.c1] : [opp.c1, opp.c2, '#e8e0d0', myTeam.c1];
-    ctx.fillStyle = '#1a2233'; ctx.fillRect(0, 0, W, 24);
     for (let x = 2; x < W; x += 5) for (let r = 0; r < 3; r++) {
       const hv = hash(x * 0.37 + r * 11);
       const jump = excite > 0 ? Math.max(0, Math.sin(t / 70 + x * 0.3 + r)) * 3 * excite : 0;
@@ -547,7 +534,6 @@ const Bar = (() => {
   }
 
   function drawEmpty() {
-    sky('#1b2340', '#2a3458');
     ground(H - 30, '#2f5a2f', '#284e28');
     label('⚽ 축구선수 키우기', W / 2, H / 2, '#ffe14a', 14);
   }

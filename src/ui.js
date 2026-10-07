@@ -122,6 +122,8 @@ const UI = (() => {
     if (injured(t)) return `🩹 부상 ${fmtSec((S.injury.until - t) / 1000)}`;
     if (S.free) return S.free.tryOffer || (S.free.market && S.free.market.length) ? '📨 입단 제의 도착' : `📭 무소속 · 이적시장 ${fmtSec((S.free.window - t) / 1000)}`;
     if (S.pendingEnd) return '📋 시즌 결산 확인';
+    const at = autoStartAt();
+    if (at) return `💤 휴식 · ${fmtSec((at - t) / 1000)} 뒤 자동 출전`;
     if (S.stamina >= staminaCost()) return '✅ 출전 준비 완료';
     return `💤 휴식 ${fmtSec((staminaCost() - S.stamina) / restRate())}`;
   }
@@ -193,11 +195,13 @@ const UI = (() => {
     else if (S.mode === 'run') btn = `<button class="btn" data-act="stopRun" ${S.run.stop || S.run.phase === 'back' ? 'disabled' : ''}>${S.run.stop || S.run.phase === 'back' ? '귀가 예정' : '🏠 이번 경기 후 귀가'}</button>`;
     else btn = `<button class="btn go" data-act="startRun" ${why ? 'disabled' : ''} title="${esc(why || '')}">▶ 출전</button>`;
     const fx = S.season && !S.season.done ? myFixture() : null;
+    const auto = S.auto !== false;
     setHtml($('camp-foot'), `
       <div class="stam"><div class="row small"><b>⚡ <span class="num" style="font-size:15px">${Math.floor(S.stamina)}</span><span class="faint">/${max}</span></b>
         <span class="faint">경기당 ${staminaCost()} · ${Math.floor(S.stamina / staminaCost())}경기 가능</span></div>
         <div class="mini"><i style="width:${S.stamina / max * 100}%"></i></div></div>
       <div class="next">${fx ? `${fx.home ? '🏠 홈' : '✈️ 원정'} · <b>vs ${esc(teamName(fx.oppId))}</b> · ${fx.md + 1}R` : ''}<br>${esc(statusText())}</div>
+      <button class="toggle ${auto ? 'on' : ''}" data-act="toggleAuto" title="스태미나가 다 차면 알아서 다시 출전해요 (꺼 둔 동안에도)"><i></i>자동 출전</button>
       ${btn}`);
   }
 
@@ -807,6 +811,7 @@ const UI = (() => {
       case 'tab': setTab(arg); break;
       case 'startRun': if (startRun()) { toast('🚌 경기장으로 출발!'); if (desktop) closeCamp(); } break;
       case 'stopRun': stopRun(); break;
+      case 'toggleAuto': S.auto = S.auto === false; toast(S.auto ? '🔁 자동 출전 켬 — 스태미나가 다 차면 알아서 나가요' : '⏸ 자동 출전 끔'); break;
       case 'report': openReports.has(arg) ? openReports.delete(arg) : openReports.add(arg); break;
       case 'train': train(arg); break;
       case 'train10': for (let i = 0; i < 10 && train(arg); i++); break;

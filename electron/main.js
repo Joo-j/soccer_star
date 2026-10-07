@@ -3,12 +3,14 @@
 // 빈 곳은 클릭이 아래 창으로 통과한다 (렌더러가 마우스 위치를 보고 setIgnore 를 부른다).
 // 게임 화면은 웹 버전(Render 서버)에서 불러온다 — 푸시만 하면 설치된 앱도 최신이 된다.
 // 웹을 못 불러오면(오프라인·서버가 너무 늦게 깨어남) 앱에 들어 있는 파일로 연다.
+// 앱 껍데기 자체는 updater.js 가 GitHub 릴리스를 보고 스스로 업데이트한다.
 //   npm run app              → https://soccer-star.onrender.com
 //   npm run app:local        → 로컬 서버(3140)
 
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const updater = require('./updater');
 
 const BAR_H = 150;
 const BIG_H = 780;
@@ -130,5 +132,6 @@ app.whenReady().then(() => {
   if (process.platform === 'darwin' && app.dock) app.dock.hide();
   create();
   makeTray();
+  updater.start();
 });
 app.on('window-all-closed', () => app.quit());

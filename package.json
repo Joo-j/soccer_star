@@ -1,6 +1,6 @@
 {
   "name": "soccer-star",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "축구선수 키우기 — 고교부터 발롱도르까지, 같은 세계의 플레이어들과 경쟁하는 방치형 커리어 게임",
   "main": "electron/main.js",
   "private": true,
@@ -36,6 +36,13 @@
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "arm64",
             "x64"
