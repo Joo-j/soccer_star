@@ -111,7 +111,7 @@ function marketValue(s = S) {
   const o = myOvr(s);
   const ageMul = s.age <= 23 ? 1.3 : s.age <= 29 ? 1 : Math.max(0.2, 1 - (s.age - 29) * 0.12);
   const fameMul = 1 + Math.log10(1 + s.fame) / 8;
-  return Math.round(3 * Math.pow(1.13, o - 30) * ageMul * fameMul);
+  return Math.round(100 * Math.pow(1.17, o - 30) * ageMul * fameMul); // OVR 57 ≈ 7천만원 · 80 ≈ 26억 · 100 ≈ 590억
 }
 function fameTier(f = S.fame) { let t = FAME_TIERS[0]; for (const x of FAME_TIERS) if (f >= x.min) t = x; return t; }
 
@@ -383,14 +383,19 @@ function tickLove(t) {
 }
 
 // ───────────────────────── 저장 ─────────────────────────
+// 데스크탑 앱은 앱 폴더의 파일에 저장한다 (웹 주소로 열리든 내장 파일로 열리든 같은 곳). 브라우저는 localStorage
+const Store = {
+  get(k) { try { const d = typeof window !== 'undefined' && window.soccerDesktop; return d ? d.storeGet(k) : localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { const d = typeof window !== 'undefined' && window.soccerDesktop; if (d) d.storeSet(k, v); else localStorage.setItem(k, v); } catch {} },
+};
 const SAVE_KEY = (name) => `soccer-star-save-v1:${name.toLowerCase()}`;
 function saveLocal() {
   if (!S) return;
   S.lastSeen = Date.now();
-  try { localStorage.setItem(SAVE_KEY(S.name), JSON.stringify(S)); } catch {}
+  Store.set(SAVE_KEY(S.name), JSON.stringify(S));
 }
 function loadLocal(name) {
-  try { const raw = localStorage.getItem(SAVE_KEY(name)); return raw ? migrate(JSON.parse(raw)) : null; } catch { return null; }
+  try { const raw = Store.get(SAVE_KEY(name)); return raw ? migrate(JSON.parse(raw)) : null; } catch { return null; }
 }
 function migrate(s) {
   if (!s || typeof s !== 'object') return null;

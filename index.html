@@ -9,7 +9,19 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="page-hint">⚽ 축구선수 키우기 — 아래 띠에서 선수가 뛰고 있어요. 왼쪽 아래 HUD를 누르면 캠프가 열려요.</div>
+<!-- 웹에서만: 데스크탑 앱 받기 -->
+<div id="appband">
+  <div class="txt">
+    <b>🖥️ 데스크탑 앱으로 받으면 바탕화면 맨 아래에서 선수가 계속 뛰어요</b>
+    <span>처음 열 때 경고가 뜨면 <a href="#" data-act="howto">설치 방법</a>을 봐 주세요</span>
+  </div>
+  <div class="dls">
+    <a class="dl hl" href="https://github.com/Joo-j/soccer_star/releases/latest/download/SoccerStar-mac-arm64.dmg" target="_blank" rel="noopener">🍎 Mac (Apple 칩)</a>
+    <a class="dl hl" href="https://github.com/Joo-j/soccer_star/releases/latest/download/SoccerStar-mac-x64.dmg" target="_blank" rel="noopener">🍎 Mac (Intel)</a>
+    <a class="dl" href="https://github.com/Joo-j/soccer_star/releases/latest/download/SoccerStar-win-x64.exe" target="_blank" rel="noopener">🪟 Windows</a>
+    <button class="dl" data-act="howto">❓ 설치 방법</button>
+  </div>
+</div>
 
 <!-- 캠프 창 -->
 <div id="camp" class="panel hidden">

@@ -1,5 +1,5 @@
 'use strict';
-// 화면: HUD, 캠프 창(왼쪽 메뉴 9개), 시작 화면, 시즌 결산·드래프트·이적시장, 무소속, 자리 비운 동안, 은퇴, 발롱도르 보상.
+// 화면: HUD, 캠프 창(왼쪽 메뉴 8개), 시작 화면, 시즌 결산·드래프트·이적시장, 무소속, 자리 비운 동안, 은퇴, 발롱도르 보상.
 // 스포츠 앱 카드형 — 숫자와 아이콘 위주로 보여 주고, 설명은 ? 도움말에 넣는다.
 // 데스크탑 앱(electron/preload.js 의 window.soccerDesktop)이면 창 크기 조절과 마우스 통과를 함께 처리한다.
 
@@ -22,7 +22,7 @@ const UI = (() => {
 
   const TABS = [
     ['match', '🏟️', '홈'], ['train', '🏋️', '훈련'], ['skill', '✨', '스킬'], ['gear', '👟', '장비'], ['build', '🏠', '시설'],
-    ['career', '🏆', '커리어'], ['star', '🌟', '스타'], ['rank', '🌍', '랭킹'], ['account', '⚙️', '계정'],
+    ['career', '🏆', '커리어'], ['star', '🌟', '스타'], ['rank', '🌍', '랭킹'],
   ];
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const teamName = (id) => (TEAM_BY_ID[id] ? TEAM_BY_ID[id].name : '무소속');
@@ -165,9 +165,6 @@ const UI = (() => {
     dirty = true;
     renderCamp();
   }
-  function syncLabel() {
-    return { online: '🟢', syncing: '🔄', offline: '🔴', gone: '⚠️', idle: '⚪' }[Net.status] || '';
-  }
   function renderCamp() {
     if (!campOpen || !S) return;
     renderedAt = Date.now();
@@ -177,13 +174,12 @@ const UI = (() => {
     setHtml($('camp-res'), `<span class="chip" title="돈">💰 <span class="num">${fmtMoney(S.money)}</span></span>
       <span class="chip" title="연습 노트">📓 <span class="num">${S.notes}</span></span>
       <span class="chip" title="스킬 포인트">✨ <span class="num">${S.sp}</span></span>
-      <span class="chip" title="팔로워">${fameTier().icon} <span class="num">${fmtNum(S.fame)}</span></span>
-      <span class="chip" title="서버 저장 상태">${syncLabel()}</span>`);
+      <span class="chip" title="팔로워">${fameTier().icon} <span class="num">${fmtNum(S.fame)}</span></span>`);
     const d = dots();
     setHtml($('nav'), TABS.map(([id, ic, name]) => `<button class="${tab === id ? 'on' : ''}" data-act="tab" data-arg="${id}"><span class="i">${ic}</span>${name}${dot(d[id])}</button>`).join('') + `<div class="ver">v${GAME_VERSION}</div>`);
     const body = $('camp-body');
     const st = body.scrollTop;
-    setHtml(body, ({ match: tabHome, train: tabTrain, skill: tabSkill, gear: tabGear, build: tabBuild, career: tabCareer, star: tabStar, rank: tabRank, account: tabAccount }[tab])());
+    setHtml(body, ({ match: tabHome, train: tabTrain, skill: tabSkill, gear: tabGear, build: tabBuild, career: tabCareer, star: tabStar, rank: tabRank }[tab])());
     body.scrollTop = st;
     renderFoot();
   }
@@ -533,23 +529,10 @@ const UI = (() => {
     return h;
   }
 
-  // ── ⚙️ 계정
-  function tabAccount() {
-    const acc = Net.accounts();
-    const me = acc.list[S.name] || {};
-    let h = `<div class="sec">${secH('계정', '다른 기기에서 닉네임과 복구 코드를 넣으면 이 선수를 이어서 키울 수 있어요.')}
-      <div class="grid g2"><div class="card"><div class="faint small">닉네임</div><div class="num" style="font-size:22px">${esc(S.name)}</div></div>
-      <div class="card"><div class="faint small">복구 코드</div><div class="num" style="font-size:22px;color:var(--accent)">${esc(me.recovery || '-')}</div></div></div></div>
-      <div class="sec">${secH('서버')}<div class="card row small">${syncLabel()} ${esc(Net.SERVER)}<button class="btn sm" data-act="syncNow" style="margin-left:auto">지금 저장</button></div></div>`;
-    const others = Object.keys(acc.list).filter((n) => n !== S.name);
-    if (others.length) h += `<div class="sec">${secH('이 기기의 다른 선수')}<div class="row">${others.map((n) => `<button class="btn sm" data-act="switchAcc" data-arg="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>`;
-    h += `<div class="sec">${secH('새 계정')}<button class="btn sm" data-act="newAccount">새 선수 만들기 / 다른 기기의 선수 가져오기</button></div>`;
-    return h;
-  }
-
   // ───────────────────────── 알림 창 공통 ─────────────────────────
   function showModal(kind, html) {
     modal = kind;
+    $('modal').className = `panel modal${kind === 'start' || kind === 'create' ? ' hero-modal' : ''}`;
     $('modal').innerHTML = html;
     $('overlay').classList.remove('hidden');
     syncWindow();
@@ -560,45 +543,61 @@ const UI = (() => {
     syncWindow();
   }
 
-  // ── 시작 화면
+  // ── 시작 화면: 로고와 닉네임 칸 하나
   function showStart(err = '') {
-    createState = { step: 'name', name: '', pos: null, foot: 'R', special: null, nextGen: false, accountMade: false };
-    showModal('start', `
-      <h2>⚽ 축구선수 키우기</h2>
-      <p class="lead">고1부터 드래프트, 이적시장, 발롱도르까지 — 같은 세계의 플레이어들과 경쟁하는 방치형 커리어</p>
-      ${secH('🆕 새 선수', '닉네임이 곧 계정이에요. 다른 선수와 겹칠 수 없고 랭킹에 이 이름으로 올라가요.')}
-      <div class="row"><input id="in-name" maxlength="12" placeholder="닉네임 (한글·영문·숫자·_ 2~12자)"><button class="btn go" data-act="startName">다음</button></div>
+    createState = { name: '', pos: 'FW', foot: 'R', special: 'sho', nextGen: false, accountMade: false };
+    showModal('start', `<div class="hero">
+      <div class="logo"><span class="ball">⚽</span><div><div class="en">SOCCER STAR</div><div class="ko">축구선수 키우기</div></div></div>
+      <p class="tagline">고1 입학부터 드래프트 · 이적시장 · 발롱도르까지</p>
+      <div class="namebox"><input id="in-name" maxlength="12" placeholder="선수 이름" autocomplete="off" spellcheck="false"><button class="btn go" data-act="startName">시작</button></div>
       <div class="err" id="name-err">${esc(err)}</div>
-      <div style="height:10px"></div>
-      ${secH('📥 다른 기기의 선수 가져오기')}
-      <div class="row"><input id="in-rname" placeholder="닉네임"><input id="in-rcode" placeholder="복구 코드"><button class="btn" data-act="recover">가져오기</button></div>
-      <div class="err" id="rec-err"></div>`);
+      <div class="faint small">한글·영문·숫자 2~12자 · 랭킹에 이 이름으로 올라가요</div>
+    </div>`);
     setTimeout(() => $('in-name') && $('in-name').focus(), 50);
   }
   async function startName() {
     const name = $('in-name').value.trim();
     const errEl = $('name-err');
-    if (!/^[가-힣A-Za-z0-9_]{2,12}$/.test(name)) { errEl.textContent = '한글·영문·숫자·_ 2~12자로 지어 주세요'; return; }
-    errEl.textContent = '확인 중… (서버가 잠들어 있으면 1분쯤 걸려요)';
+    if (!/^[가-힣A-Za-z0-9_]{2,12}$/.test(name)) { errEl.textContent = '한글·영문·숫자 2~12자로 지어 주세요'; return; }
+    if (errEl.dataset.busy) return;
+    errEl.dataset.busy = '1';
+    errEl.innerHTML = '<span class="faint">확인 중…</span>';
     try {
       const r = await Net.checkName(name);
       if (!r.ok) { errEl.textContent = r.reason; return; }
-    } catch (e) { errEl.textContent = e.message; return; }
+    } catch (e) { errEl.textContent = e.message; return; } finally { delete errEl.dataset.busy; }
     createState.name = name;
     showCreate();
   }
+  // ── 선수 만들기: 왼쪽에서 고르면 오른쪽 카드에 시작 능력치가 바로 보인다
   function showCreate() {
     const cs = createState;
-    const posCards = Object.entries(POSITIONS).map(([id, p]) => `<div class="card ${cs.pos === id ? 'sel' : ''}" data-act="cPos" data-arg="${id}"><div class="ic">${p.icon}</div><b>${p.name}</b><div class="faint small">${p.desc}</div></div>`).join('');
-    const statChips = STATS.map((s) => `<button class="${cs.special === s.id ? 'on' : ''}" data-act="cSpecial" data-arg="${s.id}">${s.icon} ${statName(s.id, cs.pos)}</button>`).join('');
     const legacy = cs.nextGen ? Math.min(16, legacyBonus()) : 0;
-    showModal('create', `
-      <h2>${cs.nextGen ? `🎖️ ${S.gen + 1}세대 선수` : `🏫 ${esc(cs.name)}, 고등학교 입학`}</h2>
-      <p class="lead">${cs.nextGen ? `전설의 피 — 모든 능력치 +${legacy}로 시작` : '포지션 · 주발 · 주특기를 골라 주세요'}</p>
-      ${secH('포지션')}<div class="pos-grid">${posCards}</div>
-      <div class="grid g2" style="margin-top:14px"><div>${secH('주발')}<div class="chips"><button class="${cs.foot === 'R' ? 'on' : ''}" data-act="cFoot" data-arg="R">오른발</button><button class="${cs.foot === 'L' ? 'on' : ''}" data-act="cFoot" data-arg="L">왼발</button></div></div>
-        <div>${secH('주특기', '고른 능력치는 +4로 시작하고 훈련비가 40% 싸요.')}<div class="chips">${statChips}</div></div></div>
-      <div class="row" style="margin-top:8px"><button class="btn go" data-act="cDone" ${cs.pos && cs.special ? '' : 'disabled'}>⚽ 시작하기</button><span class="err" id="c-err"></span></div>`);
+    const p = POSITIONS[cs.pos];
+    const st = { ...p.start };
+    st[cs.special] += 4;
+    for (const k in st) st[k] += legacy;
+    const posCards = Object.entries(POSITIONS).map(([id, x]) => `<button class="pos ${cs.pos === id ? 'on' : ''}" data-act="cPos" data-arg="${id}" style="--pc:${x.color}"><span class="ic">${x.icon}</span><b>${x.name}</b><span class="code">${id}</span></button>`).join('');
+    const statChips = STATS.map((s) => `<button class="${cs.special === s.id ? 'on' : ''}" data-act="cSpecial" data-arg="${s.id}">${s.icon} ${statName(s.id, cs.pos)}</button>`).join('');
+    showModal('create', `<div class="create">
+      <div class="pick">
+        <div class="step">${cs.nextGen ? `🎖️ ${S.gen + 1}세대` : '🏫 고등학교 입학'}</div>
+        <h2>${esc(cs.name)}</h2>
+        <div class="lbl">포지션</div><div class="posrow">${posCards}</div>
+        <div class="lbl">주발</div><div class="chips"><button class="${cs.foot === 'R' ? 'on' : ''}" data-act="cFoot" data-arg="R">오른발</button><button class="${cs.foot === 'L' ? 'on' : ''}" data-act="cFoot" data-arg="L">왼발</button></div>
+        <div class="lbl">주특기 ${help('고른 능력치는 +4로 시작하고 훈련비가 40% 싸요.')}</div><div class="chips">${statChips}</div>
+      </div>
+      <div class="preview">
+        <div class="pcard" style="--pc:${p.color}">
+          <div><div class="ovr num">${ovrOf(st, cs.pos)}</div><div class="pos">${cs.pos}</div></div>
+          <div><div class="nm">${esc(cs.name)}</div><div class="meta">${p.name} · ${cs.foot === 'L' ? '왼발' : '오른발'} · 16세</div>${legacy ? `<div class="meta" style="color:var(--gold)">전설의 피 +${legacy}</div>` : ''}</div>
+          <div class="stats">${STATS.map((s) => `<div><span class="num" style="color:${cs.special === s.id ? 'var(--gold)' : ''}">${st[s.id]}</span><span>${statName(s.id, cs.pos)}</span></div>`).join('')}</div>
+        </div>
+        <div class="faint small" style="margin:10px 2px 14px">${p.desc}</div>
+        <button class="btn go" data-act="cDone" style="width:100%">⚽ 입학하기</button>
+        <div class="err" id="c-err"></div>
+      </div>
+    </div>`);
   }
   async function createDone() {
     const cs = createState;
@@ -621,14 +620,6 @@ const UI = (() => {
     enterGame(true);
     banner(`🏫 ${TEAM_BY_ID[S.teamId].name} 입학!`, `${posLabel(S.pos)} — HUD를 눌러 캠프를 열고 ▶ 출전`);
   }
-  async function recoverAcc() {
-    const name = $('in-rname').value.trim(), code = $('in-rcode').value.trim();
-    const errEl = $('rec-err');
-    errEl.textContent = '가져오는 중…';
-    try { await Net.recover(name, code); } catch (e) { errEl.textContent = e.message; return; }
-    location.reload();
-  }
-
   // ── 시즌 결산 (+ 이적시장)
   function seasonSummary(pe) {
     const lg = LEAGUES[pe.tier];
@@ -718,6 +709,21 @@ const UI = (() => {
     showDraft();
   }
 
+  // ── 앱 설치 방법
+  function showHowto() {
+    showModal('howto', `<h2>🖥️ 데스크탑 앱 설치</h2><p class="lead">설치하면 바탕화면 맨 아래에 선수가 사는 띠가 붙어요. 빈 곳은 클릭이 뒤 창으로 그대로 넘어가요.</p>
+      ${secH('🍎 Mac')}<div class="card small" style="margin-bottom:10px">1. 칩에 맞는 파일을 받아요 (M1·M2·M3… → Apple 칩, 그 전 Mac → Intel)<br>
+        2. dmg를 열고 <b>SoccerStar</b>를 응용 프로그램 폴더로 끌어 놓아요<br>
+        3. 처음 열 때 "확인되지 않은 개발자" 경고가 뜨면 <b>시스템 설정 → 개인정보 보호 및 보안</b> 맨 아래 <b>그래도 열기</b><br>
+        4. 메뉴 막대의 ⚽ 아이콘으로 숨기기·캠프 열기·종료</div>
+      ${secH('🪟 Windows')}<div class="card small" style="margin-bottom:10px">1. exe를 받아 실행해요<br>
+        2. "Windows의 PC 보호" 창이 뜨면 <b>추가 정보 → 실행</b><br>
+        3. 작업 표시줄 오른쪽 알림 영역의 ⚽ 아이콘으로 숨기기·캠프 열기·종료</div>
+      <p class="small faint">앱은 게임 화면을 이 서버에서 불러와서, 게임이 업데이트되면 앱도 자동으로 최신이 돼요.</p>
+      <button class="btn go" data-act="closeHowto">닫기</button>`);
+  }
+  let howtoBack = null;
+
   // ── 은퇴
   function showRetired() {
     const l = S.legends[S.legends.length - 1];
@@ -764,6 +770,7 @@ const UI = (() => {
   async function onClick(e) {
     const el = e.target.closest('[data-act]');
     if (!el || el.disabled) return;
+    if (el.tagName === 'A') e.preventDefault();
     const act = el.dataset.act, arg = el.dataset.arg;
     switch (act) {
       case 'openCamp': campOpen ? closeCamp() : openCamp(); break;
@@ -791,9 +798,6 @@ const UI = (() => {
       case 'reloadRank': loadRank(); break;
       case 'duel': await doDuel(arg); break;
       case 'claimBd': await claimBd(); break;
-      case 'syncNow': saveLocal(); await Net.sync(true); break;
-      case 'switchAcc': saveLocal(); await Net.sync(true); Net.switchTo(arg); location.reload(); break;
-      case 'newAccount': saveLocal(); await Net.sync(true); closeCamp(); showStart(); break;
       // 무소속
       case 'tryout': { const ok = tryout(Number(arg)); if (ok != null) toast(ok ? '✅ 입단 테스트 합격!' : '❌ 불합격… 더 훈련해서 다시 도전해요'); break; }
       case 'signTry': signFree('try'); afterResolve(); break;
@@ -802,8 +806,7 @@ const UI = (() => {
       case 'retireFree': if (confirm('정말 은퇴할까요? 다음 세대 선수로 새로 시작해요.')) { retire(); closeCamp(); showRetired(); saveLocal(); Net.sync(true); } break;
       // 시작 화면
       case 'startName': await startName(); break;
-      case 'recover': await recoverAcc(); break;
-      case 'cPos': createState.pos = arg; if (!createState.special) createState.special = Object.entries(POSITIONS[arg].w).sort((a, b) => b[1] - a[1])[0][0]; showCreate(); break;
+      case 'cPos': createState.pos = arg; createState.special = Object.entries(POSITIONS[arg].w).sort((a, b) => b[1] - a[1])[0][0]; showCreate(); break;
       case 'cFoot': createState.foot = arg; showCreate(); break;
       case 'cSpecial': createState.special = arg; showCreate(); break;
       case 'cDone': await createDone(); break;
@@ -821,8 +824,10 @@ const UI = (() => {
       case 'accept': resolveSeason({ type: 'offer', i: Number(arg) }); closeModal(); afterResolve(); break;
       case 'resolve': resolveSeason({ type: arg }); draftView = null; closeModal(); afterResolve(); break;
       case 'retire': if (confirm('정말 은퇴할까요? 다음 세대 선수로 새로 시작해요.')) { resolveSeason({ type: 'retire' }); closeCamp(); showRetired(); saveLocal(); Net.sync(true); } break;
-      case 'nextGen': createState = { step: 'pos', name: S.name, pos: null, foot: 'R', special: null, nextGen: true }; showCreate(); break;
+      case 'nextGen': createState = { name: S.name, pos: 'FW', foot: 'R', special: 'sho', nextGen: true }; showCreate(); break;
       case 'awayOk': closeModal(); if (S.pendingEnd) showSeasonEnd(); break;
+      case 'howto': howtoBack = modal ? { kind: modal, html: $('modal').innerHTML } : null; showHowto(); break;
+      case 'closeHowto': if (howtoBack) showModal(howtoBack.kind, howtoBack.html); else closeModal(); howtoBack = null; break;
     }
     dirty = true;
     renderHud();
@@ -868,7 +873,19 @@ const UI = (() => {
     setInterval(loop, 250);
     setInterval(saveLocal, 10000);
     setInterval(checkBd, 600000);
+    setInterval(checkUpdate, 300000);
     addEventListener('beforeunload', () => { saveLocal(); Net.sync(); });
+  }
+  // 서버에 새 버전이 올라왔으면 저장하고 다시 불러온다 (앱은 웹 버전으로, 웹은 새로고침)
+  async function checkUpdate() {
+    try {
+      const txt = await (await fetch(`${Net.SERVER}/src/data.js`, { cache: 'no-store' })).text();
+      const m = /GAME_VERSION = '([^']+)'/.exec(txt);
+      if (!m || m[1] === GAME_VERSION) return;
+      saveLocal();
+      await Net.sync(true);
+      if (desktop) window.soccerDesktop.reloadWeb(); else location.reload();
+    } catch {}
   }
   function loop() {
     if (!S) return;
@@ -886,7 +903,7 @@ const UI = (() => {
     Bar.init($('cv'));
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && e.target.id === 'in-name') startName();
+      if (e.key === 'Enter' && !e.isComposing && e.target.id === 'in-name') startName();
       if (e.key === 'Escape' && campOpen) closeCamp();
     });
     renderHud();
@@ -902,7 +919,7 @@ const UI = (() => {
       if (!save) { showModal('loading', `<h2>서버에 연결할 수 없어요</h2><p class="err">${esc(e.message)}</p><button class="btn go" onclick="location.reload()">다시 시도</button>`); return; }
     }
     if (modal === 'loading') closeModal();
-    if (!save) { createState = { step: 'pos', name, pos: null, foot: 'R', special: null, nextGen: false, accountMade: true }; showCreate(); return; }
+    if (!save) { createState = { name, pos: 'FW', foot: 'R', special: 'sho', nextGen: false, accountMade: true }; showCreate(); return; }
     S = save;
     enterGame();
   }

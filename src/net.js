@@ -36,18 +36,16 @@ const Net = (() => {
     } finally { clearTimeout(timer); }
   }
 
-  // ── 이 기기의 계정 목록 { active, list: { 이름: { token, recovery } } }
-  function accounts() { try { return JSON.parse(localStorage.getItem(ACC_KEY)) || { active: null, list: {} }; } catch { return { active: null, list: {} }; } }
-  function setAccounts(a) { try { localStorage.setItem(ACC_KEY, JSON.stringify(a)); } catch {} }
+  // ── 이 기기의 계정 { active, list: { 이름: { token } } }
+  function accounts() { try { return JSON.parse(Store.get(ACC_KEY)) || { active: null, list: {} }; } catch { return { active: null, list: {} }; } }
+  function setAccounts(a) { Store.set(ACC_KEY, JSON.stringify(a)); }
   function activeToken() { const a = accounts(); return a.active && a.list[a.active] ? a.list[a.active].token : null; }
   function activeName() { return accounts().active; }
-  function remember(name, token, recovery) { const a = accounts(); a.list[name] = { token, recovery }; a.active = name; setAccounts(a); }
-  function switchTo(name) { const a = accounts(); if (a.list[name]) { a.active = name; setAccounts(a); } }
+  function remember(name, token) { const a = accounts(); a.list[name] = { token }; a.active = name; setAccounts(a); }
   function forget(name) { const a = accounts(); delete a.list[name]; if (a.active === name) a.active = null; setAccounts(a); }
 
   const checkName = (name) => api('GET', `/api/nickname?name=${encodeURIComponent(name)}`, null, { auth: false });
-  async function createAccount(name) { const r = await api('POST', '/api/accounts', { name }, { auth: false, timeout: 60000 }); remember(r.name, r.token, r.recovery); return r; }
-  async function recover(name, code) { const r = await api('POST', '/api/recover', { name, code }, { auth: false, timeout: 60000 }); remember(r.name, r.token, r.recovery); return r; }
+  async function createAccount(name) { const r = await api('POST', '/api/accounts', { name }, { auth: false, timeout: 60000 }); remember(r.name, r.token); return r; }
   const loadRemote = () => api('GET', '/api/me', null, { timeout: 60000 });
 
   function duelStats(s) {
@@ -95,8 +93,8 @@ const Net = (() => {
 
   return {
     SERVER, get status() { return status; }, onStatus: (f) => onStatus.push(f),
-    accounts, activeName, activeToken, switchTo, forget,
-    checkName, createAccount, recover, loadRemote, sync, profile, duelStats,
+    accounts, activeName, activeToken, forget,
+    checkName, createAccount, loadRemote, sync, profile, duelStats,
     refreshWorld, realsOn, get world() { return world; },
     ranking: (sort) => api('GET', `/api/ranking?sort=${sort}`, null, { auth: false }),
     duel: (target) => api('POST', '/api/duels', { target }),

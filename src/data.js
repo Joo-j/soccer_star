@@ -1,7 +1,7 @@
 'use strict';
 // 게임 데이터: 리그·팀·포지션·스타일·스킬·장비·시설·연애 상대. 계산은 core.js, 경기는 match.js 가 한다.
 
-const GAME_VERSION = '0.2.0';
+const GAME_VERSION = '0.3.0';
 const SAVE_V = 1;
 
 // 실시간 길이 (초). 경기 한 판 = 90분을 MATCH_SEC 초에 재생, 경기 사이 이동 TRAVEL_SEC 초

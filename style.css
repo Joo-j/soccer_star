@@ -26,11 +26,19 @@ body {
   overflow: hidden; user-select: none;
 }
 body.desktop { background: transparent; }
-body.desktop #page-hint { display: none; }
+body.desktop #appband { display: none; }
 button { font: inherit; color: inherit; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .hidden { display: none !important; }
 .num { font-family: var(--num); font-weight: 700; letter-spacing: .01em; font-variant-numeric: tabular-nums; }
-#page-hint { position: fixed; top: 18px; left: 0; right: 0; text-align: center; color: var(--faint); font-size: 12px; }
+#appband { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 12px 24px; background: rgba(13, 20, 36, .95); border-bottom: 1px solid var(--line); z-index: 5; }
+#appband .txt b { display: block; font-size: 15px; }
+#appband .txt span { color: var(--dim); font-size: 12px; }
+#appband .txt a { color: var(--gold); }
+#appband .dls { display: flex; gap: 8px; flex-wrap: wrap; }
+#appband .dl { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 9px 16px; font-weight: 800; font-size: 14px; color: var(--text); text-decoration: none; }
+#appband .dl:hover { border-color: rgba(62, 240, 138, .6); }
+#appband .dl.hl { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); box-shadow: 0 0 16px rgba(62, 240, 138, .3); }
+body:not(.desktop) #camp { height: min(620px, calc(100% - var(--bar-h) - 90px)); }
 
 /* ── 하단 띠 · HUD ── */
 #bar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h); }
@@ -227,6 +235,41 @@ body.desktop #overlay { background: transparent; }
 @keyframes pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .clock { text-align: center; padding: 10px; border-radius: 12px; background: #0a1020; margin-bottom: 10px; }
 .clock .num { font-size: 28px; color: var(--accent); }
+
+
+/* ── 첫 화면 · 선수 만들기 ── */
+.hero-modal { width: min(720px, calc(100% - 20px)); padding: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 0%, rgba(62, 240, 138, .14), transparent 60%), var(--panel); }
+.hero { text-align: center; padding: 44px 36px 34px; }
+.hero .logo { display: inline-flex; align-items: center; gap: 14px; text-align: left; }
+.hero .ball { font-size: 54px; filter: drop-shadow(0 6px 18px rgba(62, 240, 138, .35)); }
+.hero .en { font: 700 44px/0.95 var(--num); letter-spacing: .04em; }
+.hero .ko { color: var(--accent); font-weight: 800; font-size: 15px; letter-spacing: .08em; }
+.hero .tagline { color: var(--dim); margin: 14px 0 26px; }
+.namebox { display: flex; gap: 8px; max-width: 420px; margin: 0 auto; }
+.namebox input { font-size: 16px !important; padding: 12px 14px !important; text-align: center; }
+.namebox .btn.go { padding: 0 26px; }
+.hero .err { margin: 8px 0 2px; }
+.create { display: grid; grid-template-columns: 1.15fr 1fr; }
+.create .pick { padding: 26px 26px 24px; }
+.create .preview { padding: 26px; background: rgba(0, 0, 0, .18); border-left: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; }
+.create .step { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+.create h2 { font-size: 24px; margin: 2px 0 14px; }
+.create .lbl { color: var(--dim); font-size: 12px; font-weight: 700; margin: 14px 0 6px; display: flex; align-items: center; gap: 6px; }
+.posrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.posrow .pos { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--dim); }
+.posrow .pos .ic { font-size: 22px; filter: grayscale(.6); }
+.posrow .pos b { font-size: 12px; }
+.posrow .pos .code { font: 700 11px var(--num); color: var(--faint); }
+.posrow .pos.on { border-color: var(--pc); color: var(--text); background: linear-gradient(180deg, color-mix(in srgb, var(--pc) 18%, transparent), var(--card)); }
+.posrow .pos.on .ic { filter: none; }
+.posrow .pos.on .code { color: var(--pc); }
+.create .chips { margin-bottom: 0; }
+.create .pcard .stats .num { font-size: 22px; }
+@media (max-width: 640px) {
+  .create { grid-template-columns: 1fr; }
+  .create .preview { border-left: 0; border-top: 1px solid var(--line); }
+  .hero .en { font-size: 34px; }
+}
 
 @media (max-width: 640px) {
   #hud { max-width: calc(100% - 16px); }

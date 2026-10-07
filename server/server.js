@@ -1,5 +1,5 @@
 'use strict';
-// 축구선수 키우기 서버: 계정(닉네임 + 토큰), 세이브 동기화, 랭킹, 같은 세계의 실제 플레이어 목록, 1:1 승부차기, 발롱도르.
+// 축구선수 키우기 서버: 계정(닉네임 + 토큰, 이 기기에만 보관), 세이브 동기화, 랭킹, 같은 세계의 실제 플레이어 목록, 1:1 승부차기, 발롱도르.
 // Node 기본 모듈만 쓴다 (http, node:sqlite). 같은 주소에서 게임 파일도 내준다 (로컬 실행·테스트용).
 //   PORT=3140 DATA_DIR=./data node server/server.js
 
@@ -135,19 +135,12 @@ const routes = {
     const recovery = crypto.randomBytes(4).toString('hex').toUpperCase();
     const t = Date.now();
     db.prepare('INSERT INTO accounts (name_lc, name, token, recovery, updated, created) VALUES (?, ?, ?, ?, ?, ?)').run(name.toLowerCase(), name, token, recovery, t, t);
-    return { name, token, recovery };
-  },
-
-  'POST /api/recover': async (req) => {
-    const { name, code } = await readBody(req);
-    const row = db.prepare('SELECT * FROM accounts WHERE name_lc = ?').get(String(name || '').toLowerCase());
-    if (!row || row.recovery !== String(code || '').trim().toUpperCase()) throw new HttpError(404, '이름이나 복구 코드가 맞지 않아요');
-    return { name: row.name, token: row.token, recovery: row.recovery };
+    return { name, token };
   },
 
   'GET /api/me': (req) => {
     const row = auth(req);
-    return { name: row.name, save: parseJson(row.save), updated: row.updated, recovery: row.recovery };
+    return { name: row.name, save: parseJson(row.save), updated: row.updated };
   },
 
   'PUT /api/me': async (req) => {
