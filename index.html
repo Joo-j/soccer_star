@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>축구선수 키우기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="page-hint">⚽ 축구선수 키우기 — 아래 띠에서 선수가 뛰고 있어요. 왼쪽 아래 HUD를 누르면 캠프가 열려요.</div>
+
+<!-- 캠프 창 -->
+<div id="camp" class="panel hidden">
+  <nav id="nav"></nav>
+  <section class="main">
+    <div class="camp-head">
+      <div class="who" id="camp-who"></div>
+      <div class="chips-res" id="camp-res"></div>
+      <button class="x" data-act="closeCamp" title="닫기">✕</button>
+    </div>
+    <div class="camp-body" id="camp-body"></div>
+    <div class="camp-foot" id="camp-foot"></div>
+  </section>
+</div>
+
+<!-- 하단 띠 -->
+<div id="bar">
+  <canvas id="cv"></canvas>
+  <div id="hud" data-act="openCamp"></div>
+  <div id="toasts"></div>
+</div>
+
+<!-- 시작 화면 · 알림 창 -->
+<div id="overlay" class="hidden"><div class="panel modal" id="modal"></div></div>
+<div id="banner" class="hidden"></div>
+
+<script src="src/data.js"></script>
+<script src="src/core.js"></script>
+<script src="src/match.js"></script>
+<script src="src/career.js"></script>
+<script src="src/net.js"></script>
+<script src="src/bar.js"></script>
+<script src="src/ui.js"></script>
+</body>
+</html>

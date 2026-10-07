@@ -1,0 +1,18 @@
+{
+  "name": "soccer-star",
+  "version": "0.1.0",
+  "description": "축구선수 키우기 — 고교부터 발롱도르까지, 같은 세계의 플레이어들과 경쟁하는 방치형 커리어 게임",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "node server/server.js",
+    "app": "electron .",
+    "app:local": "SOCCER_SERVER=http://localhost:3140 electron ."
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
+  }
+}
